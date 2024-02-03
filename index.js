@@ -8,7 +8,16 @@ const jwt = require('jsonwebtoken');
 const Transaction = require('./models/Transaction');
 const Item = require('./models/Item'); 
 const authenticate = require('./middleware/authenticate'); 
-const cors = require('cors');
+//cloudinary
+const cloudinary = require('cloudinary').v2;
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' }); 
+cloudinary.config({ 
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
+  api_key: process.env.CLOUDINARY_API_KEY, 
+  api_secret: process.env.CLOUDINARY_API_SECRET 
+});
+
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -20,7 +29,6 @@ mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
   .catch(err => console.log(err));
 
 app.use(bodyParser.json()); // for parsing application/json
-app.use(cors());
 
 //====================USERS================================
 // Signin Route
@@ -41,7 +49,7 @@ app.post('/signin', async (req, res) => {
     }
 
     // Generate JWT token
-    const token = jwt.sign({ id: user._id, username: user.username }, process.env.TOKEN_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ id: user._id }, process.env.TOKEN_SECRET, { expiresIn: '1h' });
     res.json({ message: 'Logged in successfully', token }); // Send the token in the response body
   } catch (err) {
     console.error(err);
@@ -85,11 +93,6 @@ app.post('/signup', async (req, res) => {
     res.status(500).json({ message: 'Error signing up user.' });
   }
 });
-
-app.get('/api/user', authenticate, async (req, res) => {
-  return res.json(req.user);
-});
-
 //retrieve user profiles
 app.get('/user/:id', async (req, res) => {
   try {
@@ -126,38 +129,29 @@ app.put('/user/:id', async (req, res) => {
 });
 //====================ITEMS=============================
 // Create items ** Only Users in the database can create items **
-app.post('/items/create', authenticate, async (req, res) => { // Add `authenticate` middleware
-  try {  
-    // Access data from the request body
-    const {title, description, price, category, images} = req.body;
-    
-    // Check for required fields
-    if (!title || !description || !price || !category || !images) {
-        return res.status(400).json({ message: 'Please fill out all required fields.' });
-    }
+app.post('/items/create', authenticate, upload.single('images'), async (req, res) => {
+  const { title, description, price, category } = req.body;
+  const sellerId = req.user.id;
 
-    // Use the user ID from the JWT token as the sellerId
-    const sellerId = req.user.id;
+  try {
+    // Upload the image to Cloudinary
+    const result = await cloudinary.uploader.upload(req.file.path);
 
-    // Create a new item instance
+    // Create a new item with the image URL returned by Cloudinary
     const newItem = new Item({
-        title,
-        description,
-        price,
-        category,
-        sellerId, // This now comes from the authenticated user's token
-        images,
-        // Remove manual date setting to let your database handle these timestamps
+      title,
+      description,
+      price,
+      category,
+      sellerId,
+      images: [result.url], // Store the Cloudinary URL
     });
 
-    // Save the new item to the database
-    const savedItem = await newItem.save();
-    // Send a response back to the client indicating success
-    res.json({ message: 'Item created successfully!', item: savedItem });
-
+    await newItem.save();
+    res.json({ message: 'Item created successfully!', item: newItem });
   } catch (error) {
     console.error('Error creating item:', error);
-    res.status(500).json({ message: 'Error creating item.' });
+    res.status(500).json({ message: 'Internal server error.' });
   }
 });
 // Retrieve specific items
