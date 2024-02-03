@@ -8,7 +8,7 @@ const jwt = require('jsonwebtoken');
 const Transaction = require('./models/Transaction');
 const Item = require('./models/Item'); 
 const authenticate = require('./middleware/authenticate'); 
-
+const cors = require('cors');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -20,6 +20,7 @@ mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
   .catch(err => console.log(err));
 
 app.use(bodyParser.json()); // for parsing application/json
+app.use(cors());
 
 //====================USERS================================
 // Signin Route
