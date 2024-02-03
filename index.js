@@ -114,27 +114,27 @@ app.post('/item/create', async (req, res) => {
       res.status(500).json({ error: 'Error creating item.' });
     }
   });
-// Retrieve items 
+// Retrieve items
 app.get('/items/:itemId', async (req, res) => {
-    try {
-      const itemId = req.params.itemId;
-  
-      // Fetch the item from the database based on the itemId
-      const foundItem = await Item.findById(itemId);
-  
-      // Check if the item was found
-      if (!foundItem) {
-        return res.status(404).json({ error: 'Item not found.' });
-      }
-  
-      // Send the found item as the response
-      res.json(foundItem);
-    } catch (error) {
-      console.error('Error retrieving item:', error);
-      // Handle other errors and send an appropriate response
-      res.status(500).json({ error: 'Internal server error.' });
+  try {
+    const { itemId } = req.params; // Destructuring for cleaner code
+
+    // Fetch the item from the database based on the itemId
+    const foundItem = await Item.findById(itemId);
+
+    // Check if the item was found
+    if (!foundItem) {
+      return res.status(404).json({ message: 'Item not found.' });
     }
-  });
+
+    // Send the found item as the response
+    res.json(foundItem);
+  } catch (error) {
+    console.error('Error retrieving item:', error);
+    // It's good practice to avoid sending the error details directly to the client in production environments
+    res.status(500).json({ message: 'Internal server error.' });
+  }
+});
 /*
 // Partial update with PATCH
 app.patch('/items/:itemId', async (req, res) => {
