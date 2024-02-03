@@ -3,7 +3,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
-const User = require('./models/User'); // Adjust the path as necessary
+const User = require('./models/User');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -15,6 +16,32 @@ mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
   .catch(err => console.log(err));
 
 app.use(bodyParser.json()); // for parsing application/json
+
+// Signin Route
+app.post('/signin', async (req, res) => {
+    const { email, password } = req.body;
+  
+    try {
+      // Check if user exists
+      const user = await User.findOne({ email });
+      if (!user) {
+        return res.status(400).send('User not found.');
+      }
+  
+      // Compare password
+      const validPassword = await bcrypt.compare(password, user.passwordHash);
+      if (!validPassword) {
+        return res.status(400).send('Invalid password.');
+      }
+  
+      // Respond success (Consider using JWT or sessions for managing authentication in real apps)
+      const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET, { expiresIn: '1h' });
+      res.header('auth-token', token).send(token);
+        } catch (err) {
+      console.log(err);
+      res.status(500).send('An error occurred.');
+    }
+  });
 
 // Signup Route
 app.post('/signup', async (req, res) => {
