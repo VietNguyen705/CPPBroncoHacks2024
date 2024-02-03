@@ -85,6 +85,11 @@ app.post('/signup', async (req, res) => {
     res.status(500).json({ message: 'Error signing up user.' });
   }
 });
+
+app.get('/api/user', authenticate, async (req, res) => {
+  return res.json(req.user);
+});
+
 //retrieve user profiles
 app.get('/user/:id', async (req, res) => {
   try {
