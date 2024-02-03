@@ -6,6 +6,8 @@ const mongoose = require('mongoose');
 const User = require('./models/User');
 const jwt = require('jsonwebtoken');
 const Transaction = require('./models/Transaction');
+const Item = require('./models/Item'); 
+
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -79,38 +81,39 @@ app.post('/signup', async (req, res) => {
   }
 });
 
-// Create items  ** Only Users in the database can create items **
+// Create items ** Only Users in the database can create items **
 app.post('/item/create', async (req, res) => {
-  try{  
-    // Access data from the request body
-    const {title, description, price, category, sellerId, 
-        images, createdAt, updatedAt} = req.body;
-    
-    // Check for required fields
-    if (!title || !description || !price || !category || !sellerId || !images) {
-        return res.status(400).json({ error: 'Please fill out all required fields.' });
-    }    
-
-    // Process the data (e.g., save to a database)
-    const newItem = new Item({
-        title,
-        description,
-        price,
-        category,
-        images,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-    });
-
-    const savedItem = await newItem.save();
-
-    }  catch {
-        res.status(500).send('Error creating item.');
+    try {  
+      // Access data from the request body
+      const {title, description, price, category, sellerId, images} = req.body;
+      
+      // Check for required fields
+      if (!title || !description || !price || !category || !sellerId || !images) {
+          return res.status(400).json({ error: 'Please fill out all required fields.' });
+      }    
+  
+      // Create a new item instance
+      const newItem = new Item({
+          title,
+          description,
+          price,
+          category,
+          sellerId, // Ensure sellerId is passed to the model if it's part of your schema
+          images,
+          createdAt: new Date(), // It's generally better to let your database handle these timestamps
+          updatedAt: new Date(),
+      });
+  
+      // Save the new item to the database
+      const savedItem = await newItem.save();
+      // Send a response back to the client indicating success
+      res.json({ message: 'Item created successfully!', item: savedItem });
+  
+    } catch (error) {
+      console.error(error); // Log the error for debugging purposes
+      res.status(500).json({ error: 'Error creating item.' });
     }
-    // Send a response back to the client
-    res.json({ message: 'Item created!' });
   });
-
 // Retrieve items 
 app.get('/items/:itemId', async (req, res) => {
     try {
