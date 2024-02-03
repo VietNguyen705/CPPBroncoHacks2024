@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 const User = require('./models/User');
 const jwt = require('jsonwebtoken');
+const Transaction = require('./models/Transaction');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -77,6 +78,7 @@ app.post('/signup', async (req, res) => {
     res.status(500).send('Error signing up user.');
   }
 });
+
 // Create items  ** Only Users in the database can create items **
 app.post('/item/create', async (req, res) => {
   try{  
@@ -140,6 +142,44 @@ app.patch('/items/:itemId', async (req, res) => {
     res.json({ message: 'Item updated successfully!' });
   });
 */
+
+//retrieve user profiles
+app.get('/user/:id', async (req, res) => {
+    try {
+      const user = await User.findById(req.params.id).select('-passwordHash');
+      if (!user) {
+        return res.status(404).send('User not found.');
+      }
+      res.json(user);
+    } catch (err) {
+      console.error(err);
+      res.status(500).send('Server error');
+    }
+  });
+
+//update user profiles
+app.put('/user/:id', async (req, res) => {
+    try {
+      const { username, email, profileInfo } = req.body;
+      const user = await User.findByIdAndUpdate(req.params.id, {
+        $set: {
+          username,
+          email,
+          profileInfo
+        }
+      }, { new: true }).select('-passwordHash');
+  
+      if (!user) {
+        return res.status(404).send('User not found.');
+      }
+      res.json(user);
+    } catch (err) {
+      console.error(err);
+      res.status(500).send('Server error');
+    }
+  });
+  
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
