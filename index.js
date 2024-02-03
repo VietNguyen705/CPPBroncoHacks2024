@@ -108,6 +108,9 @@ app.get('/user/:id', async (req, res) => {
     res.status(500).send('Server error');
   }
 });
+app.get('/api/user', authenticate, async (req, res) => {
+  return res.json(req.user);
+});
 //update user profiles
 app.put('/user/:id', async (req, res) => {
   try {
