@@ -33,7 +33,7 @@ app.use(bodyParser.json()); // for parsing application/json
 app.use(cors());
 
 //====================USERS================================
-// Signin Route
+// Signin Route V
 app.post('/signin', async (req, res) => {
   const { email, password } = req.body;
 
@@ -59,7 +59,7 @@ app.post('/signin', async (req, res) => {
   }
 });
 
-// Signup Route
+// Signup Route V
 app.post('/signup', async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -95,7 +95,7 @@ app.post('/signup', async (req, res) => {
     res.status(500).json({ message: 'Error signing up user.' });
   }
 });
-//retrieve user listings
+//retrieve user listings V
 app.get('/my/listings', authenticate, async (req, res) => {
   try {
       const listings = await Item.find({ sellerId: req.user.id });
@@ -112,27 +112,35 @@ app.get('/my/listings', authenticate, async (req, res) => {
 
 
 
-//retrieve user profiles
+//retrieve user profiles V
 app.get('/user/profile', authenticate, async (req, res) => {
   try {
-    // Assuming 'authenticate' middleware sets `req.user.id`
-    const user = await User.findById(req.user.id).select('-passwordHash');
+    const user = await User.findById(req.user.id).select('username email -_id');
     if (!user) {
-      return res.status(404).send('User not found.');
+      return res.status(404).json({ message: 'User not found' });
     }
-    const listings = await Listing.find({ sellerId: user._id });
-    res.json({ user, listings });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Server error');
+    res.json(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
-
-app.get('/api/user', authenticate, async (req, res) => {
-  return res.json(req.user);
+//retrieve user profiles V
+app.get('/user/profile/:id', authenticate, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('username email -_id');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 });
-//update user profiles
+
+//update user profiles X
 app.put('/user/:id', async (req, res) => {
   try {
     const { username, email, profileInfo } = req.body;
@@ -154,7 +162,7 @@ app.put('/user/:id', async (req, res) => {
   }
 });
 //====================ITEMS=============================
-// Create items ** Only Users in the database can create items **
+// Create items ** Only Users in the database can create items ** V
 app.post('/items/create', authenticate, upload.single('images'), async (req, res) => {
   const { title, description, price, category } = req.body;
   const sellerId = req.user.id;
@@ -181,7 +189,7 @@ app.post('/items/create', authenticate, upload.single('images'), async (req, res
   }
 });
 
-// Route to get a specific item by its ID
+// Route to get a specific item by its ID X
 app.get('/items/:id', async (req, res) => {
   try {
     const item = await Item.findById(req.params.id);
@@ -195,7 +203,7 @@ app.get('/items/:id', async (req, res) => {
   }
 });
 
-// Retrieve all items
+// Retrieve all items V
 app.get('/items/', async (req, res) => {
   try {
     let query = Item.find({});
@@ -235,7 +243,7 @@ app.get('/items/', async (req, res) => {
   }
 });
 
-// Edit item
+// Edit item X
 app.put('/items/:itemId', async (req, res) => {
   const { itemId } = req.params;
   const { title, description, price, category, images } = req.body;
@@ -265,7 +273,7 @@ app.put('/items/:itemId', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
-// Delete Item
+// Delete Item X
 app.delete('/items/:id', authenticate, async (req, res) => {
   try {
     const itemId = req.params.id;
@@ -294,7 +302,7 @@ app.delete('/items/:id', authenticate, async (req, res) => {
 });
 
 //==================Transactions===========================
-//Create a new transaction when a buyer purchases an item or service
+//Create a new transaction when a buyer purchases an item or service X
 app.post('/transactions', authenticate, async (req, res) => {
   const { itemId, quantity, totalPrice } = req.body;
   const buyerId = req.user.id; // Assuming this is set by your authentication middleware
@@ -330,7 +338,7 @@ app.post('/transactions', authenticate, async (req, res) => {
   }
 });
 
-//Retrieve a user's transaction history
+//Retrieve a user's transaction history X
 app.get('/transactions/:userId', authenticate, async (req, res) => {
   const { userId } = req.params;
   const { role } = req.query; // Optional query parameter to filter by role (buyer or seller)
@@ -361,7 +369,7 @@ app.get('/transactions/:userId', authenticate, async (req, res) => {
     res.status(500).json({ message: 'Internal server error.' });
   }
 });
-//update transaction status
+//update transaction status X
 app.put('/transactions/:transactionId/status', authenticate, async (req, res) => {
   const { transactionId } = req.params;
   const { status } = req.body; // New status to be updated to
