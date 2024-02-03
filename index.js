@@ -154,27 +154,8 @@ app.post('/items/create', authenticate, upload.single('images'), async (req, res
     res.status(500).json({ message: 'Internal server error.' });
   }
 });
-// Retrieve specific items
-app.get('/items/:itemId', async (req, res) => {
-  try {
-    const { itemId } = req.params; // Destructuring for cleaner code
 
-    // Fetch the item from the database based on the itemId
-    const foundItem = await Item.findById(itemId);
 
-    // Check if the item was found
-    if (!foundItem) {
-      return res.status(404).json({ message: 'Item not found.' });
-    }
-
-    // Send the found item as the response
-    res.json(foundItem);
-  } catch (error) {
-    console.error('Error retrieving item:', error);
-    // It's good practice to avoid sending the error details directly to the client in production environments
-    res.status(500).json({ message: 'Internal server error.' });
-  }
-});
 // Retrieve all items
 app.get('/items/', async (req, res) => {
   try {
@@ -197,6 +178,16 @@ app.get('/items/', async (req, res) => {
       query.where('price', priceFilter);
     }
 
+    // Filtering by author if provided
+    if (req.query.author) {
+      query.where('author', { $regex: req.query.author, $options: 'i' }); // Case-insensitive search
+    }
+
+    // Filtering by title if provided
+    if (req.query.title) {
+      query.where('title', { $regex: req.query.title, $options: 'i' }); // Case-insensitive search
+    }
+
     const items = await query.exec();
     res.json(items);
   } catch (error) {
@@ -204,6 +195,7 @@ app.get('/items/', async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 });
+
 // Edit item
 app.put('/items/:itemId', async (req, res) => {
   const { itemId } = req.params;
