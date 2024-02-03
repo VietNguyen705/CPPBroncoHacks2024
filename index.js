@@ -115,7 +115,7 @@ app.get('/my/listings', authenticate, async (req, res) => {
 //retrieve user profiles V
 app.get('/user/profile', authenticate, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('username email -_id');
+    const user = await User.findById(req.user.id).select('username email _id');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
