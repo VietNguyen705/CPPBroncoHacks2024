@@ -127,7 +127,7 @@ app.get('/user/profile', authenticate, async (req, res) => {
 });
 
 //retrieve user profiles V
-app.get('/user/profile/:id', authenticate, async (req, res) => {
+app.get('/user/profile/:id', async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select('username email -_id');
     if (!user) {
@@ -285,7 +285,7 @@ app.delete('/items/:id', authenticate, async (req, res) => {
     if (!item) {
       return res.status(404).json({ message: 'Item not found.' });
     }
-
+    
     // Check if the current user is the owner of the item
     if (item.sellerId.toString() !== userId) {
       // sellerId might need to be converted from ObjectId to String
