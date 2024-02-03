@@ -95,19 +95,40 @@ app.post('/signup', async (req, res) => {
     res.status(500).json({ message: 'Error signing up user.' });
   }
 });
-//retrieve user profiles
-app.get('/user/:id', async (req, res) => {
+//retrieve user listings
+app.get('/my/listings', authenticate, async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select('-passwordHash');
+      const listings = await Item.find({ sellerId: req.user.id });
+      if (!listings.length) {
+          // This would not cause a 500 error but check how you handle no listings found
+          return res.status(404).json({ message: 'No listings found.' });
+      }
+      res.json(listings);
+  } catch (error) {
+      console.error(error);
+      res.status(500).send('Server error');
+  }
+});
+
+
+
+//retrieve user profiles
+app.get('/user/profile', authenticate, async (req, res) => {
+  try {
+    // Assuming 'authenticate' middleware sets `req.user.id`
+    const user = await User.findById(req.user.id).select('-passwordHash');
     if (!user) {
       return res.status(404).send('User not found.');
     }
-    res.json(user);
+    const listings = await Listing.find({ sellerId: user._id });
+    res.json({ user, listings });
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');
   }
 });
+
+
 app.get('/api/user', authenticate, async (req, res) => {
   return res.json(req.user);
 });
@@ -160,6 +181,19 @@ app.post('/items/create', authenticate, upload.single('images'), async (req, res
   }
 });
 
+// Route to get a specific item by its ID
+app.get('/items/:id', async (req, res) => {
+  try {
+    const item = await Item.findById(req.params.id);
+    if (!item) {
+      return res.status(404).json({ message: 'Item not found' });
+    }
+    res.json(item);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
 
 // Retrieve all items
 app.get('/items/', async (req, res) => {
